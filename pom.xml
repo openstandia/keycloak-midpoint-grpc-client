@@ -2,7 +2,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>jp.openstandia.keycloak</groupId>
+    <groupId>jp.openstandia.keycloak.integration</groupId>
     <artifactId>keycloak-midpoint-grpc-client</artifactId>
     <version>1.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
@@ -15,7 +15,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <version.keycloak>9.0.2</version.keycloak>
-        <version.midpoint-grpc>0.8.2</version.midpoint-grpc>
+        <version.midpoint-grpc>0.8.3</version.midpoint-grpc>
 
         <github.global.server>github</github.global.server>
     </properties>
