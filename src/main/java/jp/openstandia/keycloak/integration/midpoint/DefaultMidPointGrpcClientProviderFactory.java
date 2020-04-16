@@ -20,8 +20,6 @@ public class DefaultMidPointGrpcClientProviderFactory implements MidPointGrpcCli
 
     protected Config.Scope scope;
 
-    private final Object lock = new Object();
-
     @Override
     public MidPointGrpcClientProvider create(KeycloakSession session) {
         return new DefaultMidPointGrpcClientProvider(channel, clientId, clientSecret);
@@ -41,8 +39,8 @@ public class DefaultMidPointGrpcClientProviderFactory implements MidPointGrpcCli
                 .usePlaintext()
                 .build();
 
-        String clientId = scope.get("client-id");
-        String clientSecret = scope.get("client-secret");
+        clientId = scope.get("client-id");
+        clientSecret = scope.get("client-secret");
 
         logger.info("Initialized midpoint-grpc-client");
     }
