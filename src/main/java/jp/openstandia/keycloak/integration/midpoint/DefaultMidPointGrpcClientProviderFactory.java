@@ -4,9 +4,13 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 public class DefaultMidPointGrpcClientProviderFactory implements MidPointGrpcClientProviderFactory {
@@ -14,14 +18,52 @@ public class DefaultMidPointGrpcClientProviderFactory implements MidPointGrpcCli
     private static final Logger logger = Logger.getLogger(DefaultMidPointGrpcClientProviderFactory.class);
 
     // channel is thread-safe
-    private static ManagedChannel channel;
-    private String clientId;
-    private String clientSecret;
+    // channel is established per a realm
+    private static Map<String, ManagedChannel> channels = new ConcurrentHashMap<>();
 
     protected Config.Scope scope;
+    private String clientId;
 
     @Override
     public MidPointGrpcClientProvider create(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        if (realm == null) {
+            throw new RuntimeException("Can't detect the current realm for midpoint gRPC");
+        }
+
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            throw new RuntimeException("No client " + clientId + " for midpoint gRPC");
+        }
+
+        ManagedChannel channel = channels.get(realm.getName());
+
+        if (channel == null) {
+            String server = client.getAttribute("midpoint.grpc.server");
+            if (server == null || server.isEmpty()) {
+                throw new RuntimeException("No client " + clientId + " configuration for midpoint gRPC server");
+            }
+
+            String portStr = client.getAttribute("midpoint.grpc.port");
+            int port = 6565;
+            try {
+                if (portStr != null && !portStr.isEmpty()) {
+                    port = Integer.parseInt(portStr);
+                }
+            } catch (NumberFormatException e) {
+            }
+
+            // TODO should use own thread pool? Default is unlimited threads.
+            channel = ManagedChannelBuilder.forAddress(server, port)
+                    .usePlaintext()
+                    .build();
+
+            channels.put(realm.getName(), channel);
+        }
+
+        String clientId = client.getAttribute("midpoint.grpc.client-id");
+        String clientSecret = client.getAttribute("midpoint.grpc.client-secret");
+
         return new DefaultMidPointGrpcClientProvider(channel, clientId, clientSecret);
     }
 
@@ -31,16 +73,7 @@ public class DefaultMidPointGrpcClientProviderFactory implements MidPointGrpcCli
 
         this.scope = scope;
 
-        String server = scope.get("server");
-        int port = scope.getInt("port", 6565);
-
-        // TODO should use own thread pool? Default is unlimited threads.
-        channel = ManagedChannelBuilder.forAddress(server, port)
-                .usePlaintext()
-                .build();
-
         clientId = scope.get("client-id");
-        clientSecret = scope.get("client-secret");
 
         logger.info("Initialized midpoint-grpc-client");
     }
@@ -51,17 +84,18 @@ public class DefaultMidPointGrpcClientProviderFactory implements MidPointGrpcCli
 
     @Override
     public void close() {
-        logger.infov("Stopping midPoint gRPC client");
+        logger.info("Stopping midPoint gRPC client");
 
-        if (channel != null) {
+        channels.entrySet().stream().forEach(c -> {
             try {
-                channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
+                logger.infof("Stopping midPoint gRPC client for realm %s", c.getKey());
+                c.getValue().shutdown().awaitTermination(5, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 logger.error("Interrupted while shutdown process", e);
             }
-        }
+        });
 
-        logger.infov("Stopped midPoint gRPC client");
+        logger.info("Stopped midPoint gRPC client");
     }
 
     @Override
