@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static jp.openstandia.keycloak.integration.midpoint.MidPointGrpcClientConfigurator.*;
+
 public class DefaultMidPointGrpcClientProviderFactory implements MidPointGrpcClientProviderFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultMidPointGrpcClientProviderFactory.class);
@@ -39,12 +41,12 @@ public class DefaultMidPointGrpcClientProviderFactory implements MidPointGrpcCli
         ManagedChannel channel = channels.get(realm.getName());
 
         if (channel == null) {
-            String server = client.getAttribute("midpoint.grpc.server");
+            String server = client.getAttribute(CONFIG_CLIENT_ID);
             if (server == null || server.isEmpty()) {
                 throw new RuntimeException("No client " + clientId + " configuration for midpoint gRPC server");
             }
 
-            String portStr = client.getAttribute("midpoint.grpc.port");
+            String portStr = client.getAttribute(CONFIG_PORT);
             int port = 6565;
             try {
                 if (portStr != null && !portStr.isEmpty()) {
@@ -61,8 +63,8 @@ public class DefaultMidPointGrpcClientProviderFactory implements MidPointGrpcCli
             channels.put(realm.getName(), channel);
         }
 
-        String clientId = client.getAttribute("midpoint.grpc.client-id");
-        String clientSecret = client.getAttribute("midpoint.grpc.client-secret");
+        String clientId = client.getAttribute(CONFIG_CLIENT_ID);
+        String clientSecret = client.getAttribute(CONFIG_CLIENT_SECRET);
 
         return new DefaultMidPointGrpcClientProvider(channel, clientId, clientSecret);
     }
