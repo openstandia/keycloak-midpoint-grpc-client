@@ -15,7 +15,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <version.keycloak>10.0.2</version.keycloak>
-        <version.midpoint-grpc>0.11.1</version.midpoint-grpc>
+        <version.midpoint-grpc>0.13.0</version.midpoint-grpc>
 
         <github.global.server>github</github.global.server>
     </properties>
