@@ -41,7 +41,7 @@ public class DefaultMidPointGrpcClientProviderFactory implements MidPointGrpcCli
         ManagedChannel channel = channels.get(realm.getName());
 
         if (channel == null) {
-            String server = client.getAttribute(CONFIG_CLIENT_ID);
+            String server = client.getAttribute(CONFIG_SERVER);
             if (server == null || server.isEmpty()) {
                 throw new RuntimeException("No client " + clientId + " configuration for midpoint gRPC server");
             }
