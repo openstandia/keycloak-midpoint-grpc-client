@@ -45,6 +45,7 @@ public class DefaultMidPointGrpcClientProvider implements MidPointGrpcClientProv
         headers.put(Constant.AuthorizationMetadataKey, "Basic " +
                 Base64.getEncoder().encodeToString(tmp.toString().getBytes(Charset.forName("UTF-8"))));
         headers.put(Constant.SwitchToPrincipalByNameMetadataKey, username);
+        headers.put(Constant.RunPrivilegedMetadataKey, "true");
 
         SelfServiceResourceGrpc.SelfServiceResourceBlockingStub authStub = MetadataUtils.attachHeaders(stub, headers);
 
